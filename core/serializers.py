@@ -18,7 +18,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "first_name", "last_name", "phone", "age", "password")
+        fields = ("id", "first_name", "phone", "age", "password")
 
     def create(self, validated_data):
         password = validated_data.pop("password")
@@ -27,7 +27,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             email=None,
             password=password,
             first_name=validated_data.get("first_name", ""),
-            last_name=validated_data.get("last_name", ""),
             age=validated_data.get("age"),
             user_type="user",
         )
@@ -75,7 +74,7 @@ class AdminLoginSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "first_name", "last_name", "phone", "age", "email", "user_type")
+        fields = ("id", "first_name", "phone", "age", "email", "user_type")
 
 
 class AnswerOptionSerializer(serializers.ModelSerializer):
@@ -187,7 +186,7 @@ class TestAttemptDetailSerializer(serializers.ModelSerializer):
 class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "first_name", "last_name", "phone", "age", "email", "user_type", "is_staff")
+        fields = ("id", "first_name", "phone", "age", "email", "user_type", "is_staff")
 
 
 class AdminTestAttemptSerializer(serializers.ModelSerializer):
