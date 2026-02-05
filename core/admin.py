@@ -12,8 +12,8 @@ from .models import (
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ("id", "phone", "email", "first_name", "last_name", "user_type", "is_staff")
-    search_fields = ("phone", "email", "first_name", "last_name")
+    list_display = ("id", "phone", "email", "first_name", "user_type", "is_staff")
+    search_fields = ("phone", "email", "first_name")
 
 
 class AnswerOptionInline(admin.TabularInline):

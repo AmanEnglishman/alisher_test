@@ -45,7 +45,6 @@ class User(AbstractUser):
     username = None  # we don't use username
 
     first_name = models.CharField("Имя", max_length=150)
-    last_name = models.CharField("Фамилия", max_length=150)
     phone = models.CharField("Телефон", max_length=20, unique=True)
     age = models.PositiveIntegerField("Возраст", null=True, blank=True)
     email = models.EmailField("Email", unique=True, null=True, blank=True)
@@ -64,7 +63,7 @@ class User(AbstractUser):
     objects = UserManager()
 
     def __str__(self):
-        return f"{self.phone} ({self.get_full_name()})"
+        return f"{self.phone} ({self.first_name})"
 
 
 class TestLevel(models.TextChoices):
