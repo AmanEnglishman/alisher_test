@@ -60,8 +60,10 @@ class AdminLoginSerializer(serializers.Serializer):
     def validate(self, attrs):
         email = attrs.get("email")
         password = attrs.get("password")
-        user = authenticate(request=self.context.get("request"), email=email, password=password)
-        if not user:
+        user = None
+        if email:
+            user = User.objects.filter(email__iexact=email).first()
+        if not user or not user.check_password(password):
             raise serializers.ValidationError("Неверный email или пароль")
         if not user.is_staff:
             raise serializers.ValidationError("Пользователь не является администратором")
