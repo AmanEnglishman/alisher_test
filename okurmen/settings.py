@@ -157,10 +157,16 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://*",
-    "https://*",
-]
+_csrf_env = os.getenv("CSRF_TRUSTED_ORIGINS")
+if _csrf_env:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_env.split(",") if o.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        "http://45.10.41.250:8081",
+        "http://localhost",
+        "http://127.0.0.1",
+        "http://localhost:3000",
+    ]
 
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
