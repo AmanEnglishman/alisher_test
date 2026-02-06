@@ -83,7 +83,10 @@ class StartTestView(APIView):
         level = serializer.validated_data["level"]
         language = serializer.validated_data["language"]
 
-        questions = list(Question.objects.filter(level=level, is_active=True))
+        # Prefetch options to ensure serializer returns options reliably
+        questions = list(
+            Question.objects.filter(level=level, is_active=True).prefetch_related("options")
+        )
         if not questions:
             return Response(
                 {"detail": "Нет вопросов для выбранного уровня."},

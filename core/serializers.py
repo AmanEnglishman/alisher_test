@@ -114,11 +114,12 @@ class StartTestSerializer(serializers.Serializer):
 
 class TestQuestionForAttemptSerializer(serializers.ModelSerializer):
     options = serializers.SerializerMethodField()
+    question_type = serializers.SerializerMethodField()
     text = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
-        fields = ("id", "text", "image", "options")
+        fields = ("id", "text", "image", "options", "question_type")
 
     def get_text(self, obj):
         lang = self.context.get("language", "ru")
@@ -126,10 +127,16 @@ class TestQuestionForAttemptSerializer(serializers.ModelSerializer):
 
     def get_options(self, obj):
         lang = self.context.get("language", "ru")
-        options = obj.options.all()
+        options = list(obj.options.all())
+        if not options:
+            return []
         if lang == "kg":
-            return [{"id": o.id, "text": o.text_kg} for o in options]
-        return [{"id": o.id, "text": o.text_ru} for o in options]
+            return [{"id": o.id, "index": idx, "text": o.text_kg} for idx, o in enumerate(options)]
+        return [{"id": o.id, "index": idx, "text": o.text_ru} for idx, o in enumerate(options)]
+
+    def get_question_type(self, obj):
+        # if there are answer options — it's a choice question, otherwise open-ended
+        return "choice" if obj.options.exists() else "open"
 
 
 class SubmitAnswerSerializer(serializers.Serializer):
