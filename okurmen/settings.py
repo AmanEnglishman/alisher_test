@@ -163,6 +163,7 @@ if _csrf_env:
 else:
     CSRF_TRUSTED_ORIGINS = [
         "http://45.10.41.250:8081",
+        "https://45.10.41.250:8082",
         "http://localhost",
         "http://127.0.0.1",
         "http://localhost:3000",
