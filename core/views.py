@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.utils import timezone
+from django.db.models import Q
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -141,7 +142,8 @@ class SubmitAnswerView(APIView):
         serializer.is_valid(raise_exception=True)
         attempt_id = serializer.validated_data["attempt_id"]
         question_id = serializer.validated_data["question_id"]
-        selected_option_id = serializer.validated_data["selected_option_id"]
+        selected_option_id = serializer.validated_data.get("selected_option_id")
+        text_answer = serializer.validated_data.get("text_answer")
 
         try:
             attempt = TestAttempt.objects.get(id=attempt_id, user=request.user)
@@ -167,9 +169,11 @@ class SubmitAnswerView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # запрещаем перепроходить предыдущие вопросы:
+        # запрещаем перепроходить предыдущие вопросы: считаем вопрос отвеченным
+        # если выбран вариант или заполнён текстовый ответ
         last_answered = (
-            TestAnswer.objects.filter(attempt=attempt, selected_option__isnull=False)
+            TestAnswer.objects.filter(attempt=attempt)
+            .filter(Q(selected_option__isnull=False) | Q(text_answer__isnull=False))
             .order_by("-order_index")
             .first()
         )
@@ -184,24 +188,39 @@ class SubmitAnswerView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            selected_option = AnswerOption.objects.get(
-                id=selected_option_id, question_id=question_id
-            )
-        except AnswerOption.DoesNotExist:
-            return Response(
-                {"detail": "Некорректный вариант ответа."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # Handle choice vs open question
+        # If question has options -> require selected_option_id
+        if answer.question.options.exists():
+            if not selected_option_id:
+                return Response({"detail": "Требуется выбранный вариант ответа."}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                selected_option = AnswerOption.objects.get(
+                    id=selected_option_id, question_id=question_id
+                )
+            except AnswerOption.DoesNotExist:
+                return Response(
+                    {"detail": "Некорректный вариант ответа."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        answer.selected_option = selected_option
-        answer.is_correct = selected_option.is_correct
-        answer.save()
+            answer.selected_option = selected_option
+            answer.text_answer = None
+            answer.is_correct = selected_option.is_correct
+            answer.save()
+        else:
+            # open-ended question: accept text_answer
+            if text_answer is None or text_answer == "":
+                return Response({"detail": "Требуется текстовый ответ."}, status=status.HTTP_400_BAD_REQUEST)
+            answer.text_answer = text_answer
+            answer.selected_option = None
+            # cannot auto-grade open answers — mark as not correct by default
+            answer.is_correct = False
+            answer.save()
 
-        # Если это был последний вопрос — подсчитать результат и завершить попытку.
+        # Count answers where either selected_option or text_answer is present
         total_answered = TestAnswer.objects.filter(
-            attempt=attempt, selected_option__isnull=False
-        ).count()
+            attempt=attempt
+        ).filter(Q(selected_option__isnull=False) | Q(text_answer__isnull=False)).count()
         if total_answered == attempt.total_questions:
             correct = TestAnswer.objects.filter(
                 attempt=attempt, is_correct=True
@@ -217,17 +236,12 @@ class SubmitAnswerView(APIView):
 
             attempt.correct_answers = correct
             attempt.percent = percent
-            # запрещаем перепроходить предыдущие вопросы: считаем вопрос отвеченным
-            # если выбран вариант или заполнён текстовый ответ
-            from django.db.models import Q
+            attempt.score = correct  # можно доработать формулу
+            attempt.knowledge_level = k_level
+            attempt.finished_at = timezone.now()
+            attempt.save()
 
-            last_answered = (
-                TestAnswer.objects.filter(
-                    attempt=attempt
-                ).filter(Q(selected_option__isnull=False) | Q(text_answer__isnull=False))
-                .order_by("-order_index")
-                .first()
-            )
+        return Response({"detail": "Ответ принят."})
 
 
 class TestHistoryView(generics.ListAPIView):
@@ -269,8 +283,6 @@ class TestConfigViewSet(viewsets.ModelViewSet):
 
 
 class AdminTestAttemptViewSet(viewsets.ReadOnlyModelViewSet):
-            # Count answers where either selected_option or text_answer is present
-            total_answered = TestAnswer.objects.filter(
-                attempt=attempt
-            ).filter(Q(selected_option__isnull=False) | Q(text_answer__isnull=False)).count()
-
+    queryset = TestAttempt.objects.select_related("user").all()
+    serializer_class = AdminTestAttemptSerializer
+    permission_classes = [IsAdmin]
