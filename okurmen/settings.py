@@ -18,7 +18,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-dev-okurmen')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['okurmentest.duckdns.org', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -170,8 +170,7 @@ else:
         "http://localhost:3000",
     ]
 
-# Allow the test domain in allowed hosts in development; production should set via env
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,okurmentest.duckdns.org').split(',')
+
 
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
