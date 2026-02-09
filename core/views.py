@@ -217,12 +217,17 @@ class SubmitAnswerView(APIView):
 
             attempt.correct_answers = correct
             attempt.percent = percent
-            attempt.score = correct  # можно доработать формулу
-            attempt.knowledge_level = k_level
-            attempt.finished_at = timezone.now()
-            attempt.save()
+            # запрещаем перепроходить предыдущие вопросы: считаем вопрос отвеченным
+            # если выбран вариант или заполнён текстовый ответ
+            from django.db.models import Q
 
-        return Response({"detail": "Ответ принят."})
+            last_answered = (
+                TestAnswer.objects.filter(
+                    attempt=attempt
+                ).filter(Q(selected_option__isnull=False) | Q(text_answer__isnull=False))
+                .order_by("-order_index")
+                .first()
+            )
 
 
 class TestHistoryView(generics.ListAPIView):
@@ -264,7 +269,8 @@ class TestConfigViewSet(viewsets.ModelViewSet):
 
 
 class AdminTestAttemptViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = TestAttempt.objects.select_related("user").all()
-    serializer_class = AdminTestAttemptSerializer
-    permission_classes = [IsAdmin]
+            # Count answers where either selected_option or text_answer is present
+            total_answered = TestAnswer.objects.filter(
+                attempt=attempt
+            ).filter(Q(selected_option__isnull=False) | Q(text_answer__isnull=False)).count()
 

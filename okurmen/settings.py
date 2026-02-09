@@ -164,10 +164,14 @@ else:
     CSRF_TRUSTED_ORIGINS = [
         "http://45.10.41.250:8081",
         "https://45.10.41.250:8082",
+        "https://okurmentest.duckdns.org",
         "http://localhost",
         "http://127.0.0.1",
         "http://localhost:3000",
     ]
+
+# Allow the test domain in allowed hosts in development; production should set via env
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,okurmentest.duckdns.org').split(',')
 
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False

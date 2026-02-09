@@ -170,6 +170,7 @@ class TestAnswer(models.Model):
     selected_option = models.ForeignKey(
         AnswerOption, on_delete=models.CASCADE, null=True, blank=True
     )
+    text_answer = models.TextField("Текстовый ответ", null=True, blank=True)
     is_correct = models.BooleanField(default=False)
     order_index = models.PositiveIntegerField(
         "Порядок вопроса в тесте",

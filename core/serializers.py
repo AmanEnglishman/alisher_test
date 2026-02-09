@@ -142,7 +142,8 @@ class TestQuestionForAttemptSerializer(serializers.ModelSerializer):
 class SubmitAnswerSerializer(serializers.Serializer):
     attempt_id = serializers.IntegerField()
     question_id = serializers.IntegerField()
-    selected_option_id = serializers.IntegerField()
+    selected_option_id = serializers.IntegerField(required=False, allow_null=True)
+    text_answer = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
 
 class TestAttemptSerializer(serializers.ModelSerializer):
