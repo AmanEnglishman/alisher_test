@@ -165,6 +165,7 @@ else:
         "http://45.10.41.250:8081",
         "https://45.10.41.250:8082",
         "https://okurmentest.duckdns.org",
+        "http://okurmentest.duckdns.org",
         "http://localhost",
         "http://127.0.0.1",
         "http://localhost:3000",
